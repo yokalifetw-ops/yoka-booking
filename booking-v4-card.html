@@ -749,8 +749,7 @@
       if (holiday) infoLines.push("例假日：" + holiday);
       if (notice) infoLines.push(notice);
 
-      document.getElementById("storeHoursText").innerText = infoLines.join("
-");
+      document.getElementById("storeHoursText").innerText = infoLines.join("\n");
 
       const mapWrap = document.getElementById("storeMapWrap");
       mapWrap.innerHTML = "";
