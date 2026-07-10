@@ -672,7 +672,7 @@
       today.setHours(0, 0, 0, 0);
 
       const maxDate = new Date(today);
-      maxDate.setMonth(maxDate.getMonth() + 3);
+      maxDate.setDate(maxDate.getDate() + 30);
 
       dateSelect.innerHTML =
         '<option value="">請選擇預約日期</option>';
