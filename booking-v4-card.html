@@ -422,7 +422,7 @@
     <div id="phoneError" class="field-error">手機號碼需為 10 碼，且須為台灣手機格式。</div>
 
     <label for="visitDate">預約日期 *</label>
-    <input id="visitDate" type="date">
+    <select id="visitDate"><option value="">請選擇預約日期</option></select>
 
     <label for="time">預約時間 *</label>
     <select id="time" required><option value="">請先選擇門市與日期</option></select>
@@ -500,7 +500,7 @@
      */
     const LIFF_ID = "2009269118-BDtYZMVp";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxIYSSUrg_8P9nX-lffyoTEUaGy1NVZR9Z9lMryf4q5oNhLP1JLn7wORC_qp55phgl/exec";
-    const APP_VERSION = "20260710-commercial-v2-fixed";
+    const APP_VERSION = "20260710-commercial-v3-date-select";
 
     let liffReady = false;
     let pageMode = "create";
@@ -665,14 +665,47 @@
     }
 
     function setBookingDateLimits() {
-      const dateInput = document.getElementById("visitDate");
+      const dateSelect = document.getElementById("visitDate");
+      const previousValue = dateSelect.value;
       const today = new Date();
-      const maxDate = new Date(today);
 
+      today.setHours(0, 0, 0, 0);
+
+      const maxDate = new Date(today);
       maxDate.setMonth(maxDate.getMonth() + 3);
 
-      dateInput.min = formatDateInputValue(today);
-      dateInput.max = formatDateInputValue(maxDate);
+      dateSelect.innerHTML =
+        '<option value="">請選擇預約日期</option>';
+
+      const weekNames = [
+        "日", "一", "二", "三", "四", "五", "六"
+      ];
+
+      const cursor = new Date(today);
+
+      while (cursor <= maxDate) {
+        const option = document.createElement("option");
+        const value = formatDateInputValue(cursor);
+
+        option.value = value;
+        option.textContent =
+          value.replaceAll("-", "/") +
+          "（" +
+          weekNames[cursor.getDay()] +
+          "）";
+
+        dateSelect.appendChild(option);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
+      if (
+        previousValue &&
+        Array.from(dateSelect.options).some(
+          option => option.value === previousValue
+        )
+      ) {
+        dateSelect.value = previousValue;
+      }
     }
 
     function timeToMinutes(timeText) {
