@@ -500,6 +500,7 @@
      */
     const LIFF_ID = "2009269118-BDtYZMVp";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxIYSSUrg_8P9nX-lffyoTEUaGy1NVZR9Z9lMryf4q5oNhLP1JLn7wORC_qp55phgl/exec";
+    const APP_VERSION = "20260710-commercial-v2-fixed";
 
     let liffReady = false;
     let pageMode = "create";
@@ -850,8 +851,7 @@
       if (holiday) infoLines.push("例假日：" + holiday);
       if (notice) infoLines.push(notice);
 
-      document.getElementById("storeHoursText").innerText = infoLines.join("
-");
+      document.getElementById("storeHoursText").innerText = infoLines.join("\n");
 
       const mapWrap = document.getElementById("storeMapWrap");
       mapWrap.innerHTML = "";
