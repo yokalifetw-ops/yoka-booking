@@ -425,7 +425,7 @@
     <input id="visitDate" type="date">
 
     <label for="time">預約時間 *</label>
-    <input id="time" type="time" step="1800" required>
+    <select id="time" required><option value="">請先選擇門市與日期</option></select>
     <div id="timeHint" class="hint">請先選擇門市</div>
 
     <label for="people">體驗人數</label>
@@ -500,7 +500,6 @@
      */
     const LIFF_ID = "2009269118-BDtYZMVp";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxIYSSUrg_8P9nX-lffyoTEUaGy1NVZR9Z9lMryf4q5oNhLP1JLn7wORC_qp55phgl/exec";
-    const APP_VERSION = "20260710-v3-card-txg";
 
     let liffReady = false;
     let pageMode = "create";
@@ -656,6 +655,108 @@
       return result;
     }
 
+
+    function formatDateInputValue(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function setBookingDateLimits() {
+      const dateInput = document.getElementById("visitDate");
+      const today = new Date();
+      const maxDate = new Date(today);
+
+      maxDate.setMonth(maxDate.getMonth() + 3);
+
+      dateInput.min = formatDateInputValue(today);
+      dateInput.max = formatDateInputValue(maxDate);
+    }
+
+    function timeToMinutes(timeText) {
+      const parts = String(timeText || "").split(":").map(Number);
+      if (parts.length < 2 || parts.some(Number.isNaN)) return null;
+      return parts[0] * 60 + parts[1];
+    }
+
+    function buildTimeOptions() {
+      const timeSelect = document.getElementById("time");
+      const dateValue = document.getElementById("visitDate").value;
+
+      timeSelect.innerHTML = "";
+
+      if (!selectedStore || selectedStore.bookingMode !== "預約制") {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "此門市無需預約";
+        timeSelect.appendChild(option);
+        timeSelect.disabled = true;
+        return;
+      }
+
+      if (!dateValue) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "請先選擇預約日期";
+        timeSelect.appendChild(option);
+        timeSelect.disabled = true;
+        return;
+      }
+
+      const startMinutes =
+        timeToMinutes(selectedStore.startTime || "00:00") ?? 0;
+
+      const endMinutes =
+        timeToMinutes(selectedStore.endTime || "23:59") ?? 1439;
+
+      const now = new Date();
+      const selectedDate = new Date(dateValue + "T00:00:00");
+      const todayStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      );
+
+      let minimumMinutes = startMinutes;
+
+      if (selectedDate.getTime() === todayStart.getTime()) {
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        minimumMinutes = Math.max(
+          startMinutes,
+          Math.ceil(nowMinutes / 30) * 30
+        );
+      }
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "請選擇預約時間";
+      timeSelect.appendChild(placeholder);
+
+      for (let minutes = minimumMinutes; minutes <= endMinutes; minutes += 30) {
+        const hour = Math.floor(minutes / 60);
+        const minute = minutes % 60;
+
+        if (hour > 23) continue;
+
+        const timeText =
+          String(hour).padStart(2, "0") +
+          ":" +
+          String(minute).padStart(2, "0");
+
+        const option = document.createElement("option");
+        option.value = timeText;
+        option.textContent = timeText;
+        timeSelect.appendChild(option);
+      }
+
+      timeSelect.disabled = timeSelect.options.length <= 1;
+
+      if (timeSelect.options.length <= 1) {
+        placeholder.textContent = "今日已無可預約時段";
+      }
+    }
+
     async function loadStores() {
       const result = await apiGet("get_stores");
       stores = Array.isArray(result.stores) ? result.stores : [];
@@ -749,7 +850,8 @@
       if (holiday) infoLines.push("例假日：" + holiday);
       if (notice) infoLines.push(notice);
 
-      document.getElementById("storeHoursText").innerText = infoLines.join("\n");
+      document.getElementById("storeHoursText").innerText = infoLines.join("
+");
 
       const mapWrap = document.getElementById("storeMapWrap");
       mapWrap.innerHTML = "";
@@ -874,6 +976,7 @@
         document.getElementById("name").value = data.name || "";
         document.getElementById("phone").value = (data.phone || "").replace(/^'/, "");
         document.getElementById("visitDate").value = data.visitDate || "";
+        buildTimeOptions();
         document.getElementById("time").value = data.bookingTime || "";
         document.getElementById("people").value = data.people || "1";
         document.getElementById("product").value = data.product || "";
@@ -940,9 +1043,25 @@
       }
 
       const selectedDateTime = new Date(`${visitDate}T${time}:00`);
+      const now = new Date();
+      const maxBookingDate = new Date(now);
+      maxBookingDate.setMonth(maxBookingDate.getMonth() + 3);
+      maxBookingDate.setHours(23, 59, 59, 999);
 
-      if (selectedDateTime <= new Date()) {
+      if (selectedDateTime <= now) {
         showModal("時間不可預約", "預約時間必須晚於目前時間。");
+        return false;
+      }
+
+      if (selectedDateTime > maxBookingDate) {
+        showModal("日期不可預約", "目前僅開放預約三個月內的日期。");
+        return false;
+      }
+
+      const minutePart = Number(time.split(":")[1]);
+
+      if (minutePart !== 0 && minutePart !== 30) {
+        showModal("時間格式錯誤", "預約時間僅開放整點或30分。");
         return false;
       }
 
@@ -1039,10 +1158,9 @@
 
     document.getElementById("phone").addEventListener("input", sanitizePhoneInput);
 
-    document.getElementById("visitDate").min =
-      new Date().toISOString().slice(0, 10);
-
-    window.onload = initLIFF;
+    document.getElementById("visitDate").addEventListener("change", buildTimeOptions);
+    setBookingDateLimits();
+window.onload = initLIFF;
   </script>
 </body>
 </html>
