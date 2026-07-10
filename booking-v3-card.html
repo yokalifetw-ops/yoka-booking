@@ -117,21 +117,19 @@
     .store-option-name {
       font-size: 18px;
       font-weight: bold;
-      margin-bottom: 6px;
       padding-right: 38px;
+      line-height: 1.5;
     }
 
-    .store-option-address {
-      font-size: 13px;
-      color: var(--subtext);
-      line-height: 1.6;
-    }
-
-    .store-option-hours {
-      margin-top: 8px;
-      font-size: 12px;
-      color: var(--brand-dark);
-      font-weight: bold;
+    .no-booking-note {
+      margin-top: 14px;
+      padding: 16px;
+      border: 1px solid #f0d58b;
+      border-radius: 14px;
+      background: #fff9e8;
+      color: #755500;
+      font-size: 14px;
+      line-height: 1.8;
     }
 
     .store-options-loading {
@@ -415,6 +413,7 @@
       <div id="storeMapWrap"></div>
     </div>
 
+    <div id="bookingFormSection">
     <label for="name">姓名 *</label>
     <input id="name" type="text" placeholder="請輸入姓名">
 
@@ -472,6 +471,9 @@
 
     <button id="submitBtn" class="btn" type="button" onclick="submitForm()">送出預約</button>
     <button id="cancelBookingBtn" class="btn secondary hidden" type="button" onclick="cancelBooking()">取消此預約</button>
+    </div>
+
+    <div id="noBookingNote" class="no-booking-note hidden"></div>
 
     <div id="status" class="status">正在初始化系統...</div>
 
@@ -498,7 +500,7 @@
      */
     const LIFF_ID = "2009269118-BDtYZMVp";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynnI28PLfJIYEz1bZwWwIU7O6n9iLhpXmaDNaGiAl3LsrgIXwH3OSGIQYuDc3dZQc/exec";
-    const APP_VERSION = "20260710-v3-card";
+    const APP_VERSION = "20260710-v3-card-txg";
 
     let liffReady = false;
     let pageMode = "create";
@@ -656,11 +658,40 @@
 
     async function loadStores() {
       const result = await apiGet("get_stores");
-      stores = Array.isArray(result.stores) ? result.stores : [];
+      const apiStores = Array.isArray(result.stores) ? result.stores : [];
 
-      if (!stores.length) {
-        throw new Error("目前沒有可預約的門市");
-      }
+      const taichungFallback = {
+        code: "TXG",
+        name: "台中體驗館",
+        address: "台中市北屯區后庄三街216巷13號",
+        googleMap: "",
+        startTime: "",
+        endTime: "",
+        bookingEnabled: false,
+        walkInText: "無需預約，營業時間內可直接前往",
+        businessHoursText: "平日 10:00－19:00｜例假日 13:00－18:00"
+      };
+
+      stores = ["TPE", "HSZ"].map(code => {
+        const store = apiStores.find(item => item.code === code);
+        if (!store) return null;
+        return Object.assign({}, store, {
+          bookingEnabled: true,
+          displayHoursText: "24H"
+        });
+      }).filter(Boolean);
+
+      const apiTaichung = apiStores.find(item => item.code === "TXG");
+      stores.push(
+        Object.assign({}, taichungFallback, apiTaichung || {}, {
+          bookingEnabled: false,
+          walkInText: "無需預約，營業時間內可直接前往",
+          businessHoursText: "平日 10:00－19:00｜例假日 13:00－18:00"
+        })
+      );
+
+      const requiredCodes = ["TPE", "HSZ", "TXG"];
+      stores.sort((a, b) => requiredCodes.indexOf(a.code) - requiredCodes.indexOf(b.code));
 
       const container = document.getElementById("storeOptions");
       container.innerHTML = "";
@@ -670,20 +701,10 @@
         button.type = "button";
         button.className = "store-option";
         button.dataset.storeCode = store.code;
-
-        const startTime = store.startTime || "00:00";
-        const endTime = store.endTime || "23:59";
-
-        button.innerHTML = `
-          <div class="store-option-name">${escapeHtml(store.name || "")}</div>
-          <div class="store-option-address">📍 ${escapeHtml(store.address || "")}</div>
-          <div class="store-option-hours">可預約時間：${escapeHtml(startTime)}－${escapeHtml(endTime)}</div>
-        `;
-
+        button.innerHTML = `<div class="store-option-name">${escapeHtml(store.name || "")}</div>`;
         button.addEventListener("click", function () {
           selectStore(store.code);
         });
-
         container.appendChild(button);
       });
 
@@ -692,7 +713,7 @@
 
       if (validQueryStore) {
         selectStore(queryStore);
-      } else if (stores.length === 1) {
+      } else if (stores.length) {
         selectStore(stores[0].code);
       }
     }
@@ -726,9 +747,13 @@
       const card = document.getElementById("storeCard");
       const time = document.getElementById("time");
       const hint = document.getElementById("timeHint");
+      const bookingForm = document.getElementById("bookingFormSection");
+      const noBookingNote = document.getElementById("noBookingNote");
 
       if (!selectedStore) {
         card.classList.remove("show");
+        bookingForm.classList.remove("hidden");
+        noBookingNote.classList.add("hidden");
         hint.innerText = "請先選擇門市";
         return;
       }
@@ -737,15 +762,11 @@
       document.getElementById("storeAddressText").innerText =
         selectedStore.address ? "地址：" + selectedStore.address : "";
 
-      const startTime = selectedStore.startTime || "00:00";
-      const endTime = selectedStore.endTime || "23:59";
+      const hoursText = selectedStore.bookingEnabled === false
+        ? "營業時間：" + selectedStore.businessHoursText
+        : "可預約時間：24H";
 
-      document.getElementById("storeHoursText").innerText =
-        "可預約時間：" + startTime + "－" + endTime;
-
-      time.min = startTime;
-      time.max = endTime;
-      hint.innerText = "可預約時間：" + startTime + "－" + endTime;
+      document.getElementById("storeHoursText").innerText = hoursText;
 
       const mapWrap = document.getElementById("storeMapWrap");
       mapWrap.innerHTML = "";
@@ -760,6 +781,21 @@
       }
 
       card.classList.add("show");
+
+      if (selectedStore.bookingEnabled === false) {
+        bookingForm.classList.add("hidden");
+        noBookingNote.classList.remove("hidden");
+        noBookingNote.innerText =
+          "台中體驗館無需預約，營業時間內可直接前往。\n\n" +
+          "平日 10:00－19:00\n" +
+          "例假日 13:00－18:00";
+      } else {
+        bookingForm.classList.remove("hidden");
+        noBookingNote.classList.add("hidden");
+        time.min = "00:00";
+        time.max = "23:59";
+        hint.innerText = "24H 開放預約";
+      }
     }
 
     function applyEditModeUI() {
@@ -873,6 +909,11 @@
 
       if (!storeCode || !selectedStore) {
         showModal("請選擇門市", "請先選擇預約門市。");
+        return false;
+      }
+
+      if (selectedStore.bookingEnabled === false) {
+        showModal("無需預約", "台中體驗館無需預約，請於營業時間內直接前往。");
         return false;
       }
 
