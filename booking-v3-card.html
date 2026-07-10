@@ -1,1 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YOKA 佑客家具｜體驗館預約</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --brand: #06C755;
+      --brand-dark: #05a647;
+      --text: #222;
+      --subtext: #666;
+      --border: #d8dbe2;
+      --bg: #f5f6f8;
+      --card: #ffffff;
+      --soft: #f7f8fa;
+      --danger: #c5221f;
+      --success: #137333;
+      --shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      font-family: Arial, "Microsoft JhengHei", sans-serif;
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .brand-badge {
+      display: inline-block;
+      background: #eefaf2;
+      color: var(--brand-dark);
+      border: 1px solid #cdeed7;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.35;
+    }
+
+    .desc {
+      color: var(--subtext);
+      font-size: 14px;
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+
+
+    .store-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .store-option {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      background: #fff;
+      cursor: pointer;
+      transition: 0.2s ease;
+      position: relative;
+    }
+
+    .store-option:hover {
+      border-color: var(--brand);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      transform: translateY(-1px);
+    }
+
+    .store-option.selected {
+      border-color: var(--brand);
+      background: #f1fbf5;
+      box-shadow: 0 0 0 3px rgba(6,199,85,0.10);
+    }
+
+    .store-option.selected::after {
+      content: "✓";
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .store-option-name {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      padding-right: 38px;
+    }
+
+    .store-option-address {
+      font-size: 13px;
+      color: var(--subtext);
+      line-height: 1.6;
+    }
+
+    .store-option-hours {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--brand-dark);
+      font-weight: bold;
+    }
+
+    .store-options-loading {
+      padding: 14px;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      color: var(--subtext);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .store-card {
+      display: none;
+      margin: 12px 0 4px;
+      padding: 14px;
+      background: #f7fbf8;
+      border: 1px solid #d8eee0;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .store-card.show { display: block; }
+
+    .store-card a {
+      color: var(--brand-dark);
+      word-break: break-all;
+    }
+
+    .section-title {
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="tel"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 14px;
+      font-size: 16px;
+      background: #fff;
+      outline: none;
+      appearance: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(6,199,85,0.12);
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .input-error {
+      border-color: var(--danger) !important;
+      box-shadow: 0 0 0 3px rgba(197,34,31,0.1) !important;
+    }
+
+    .field-error {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--danger);
+      display: none;
+    }
+
+    .hint {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .rule-box {
+      margin-top: 12px;
+      padding: 14px;
+      background: #fafafa;
+      border: 1px solid #ececec;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.9;
+      color: #444;
+    }
+
+    .agree-wrap {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 16px;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .agree-wrap input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      flex: 0 0 auto;
+    }
+
+    .btn {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 15px;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .btn:hover { background: var(--brand-dark); }
+
+    .btn:disabled {
+      background: #9cd8b1;
+      cursor: not-allowed;
+    }
+
+    .btn.secondary {
+      background: #e9ecef;
+      color: #333;
+      margin-top: 10px;
+    }
+
+    .status {
+      margin-top: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: #333;
+      background: var(--soft);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .ok { color: var(--success); }
+    .err { color: var(--danger); }
+    .hidden { display: none !important; }
+
+    .loading-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.45);
+      border-top: 2px solid #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.42);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    }
+
+    .modal.show { display: flex; }
+
+    .modal-box {
+      width: 100%;
+      max-width: 360px;
+      background: #fff;
+      border-radius: 18px;
+      padding: 24px 20px 18px;
+      text-align: center;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .modal-text {
+      font-size: 15px;
+      color: #444;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      margin-bottom: 18px;
+    }
+
+    .modal-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 13px;
+      cursor: pointer;
+    }
+
+    .top-note {
+      background: #fff8e8;
+      border: 1px solid #f3e0a2;
+      color: #7a5b00;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .edit-banner {
+      background: #eef7ff;
+      border: 1px solid #cfe3ff;
+      color: #1f4c7a;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="brand-badge">YOKA｜24H 人體工學椅體驗館</div>
+
+    <h1>YOKA 佑客 人體工學椅</h1>
+    <h1 id="pageTitle2">體驗館預約</h1>
+
+    <div class="desc" id="pageDesc">
+      請選擇體驗館並填寫以下資料，送出後將透過 LINE 提供預約及門禁資訊。
+    </div>
+
+    <div id="editBanner" class="edit-banner">
+      您目前正在修改既有預約，門市將依原預約自動帶入。
+    </div>
+
+    <div class="top-note">
+      ．同一 LINE 帳號於有效預約期間內不可重複預約。<br>
+      ．預約完成後，系統將立即發送預約成功通知。<br>
+      ．系統將於預約時間前約 30 分鐘發送開門按鈕。
+    </div>
+
+    <label>預約門市 *</label>
+    <div id="storeOptions" class="store-options">
+      <div class="store-options-loading">門市載入中...</div>
+    </div>
+    <input id="storeCode" type="hidden">
+
+    <div id="storeCard" class="store-card">
+      <div><strong id="storeNameText"></strong></div>
+      <div id="storeAddressText"></div>
+      <div id="storeHoursText"></div>
+      <div id="storeMapWrap"></div>
+    </div>
+
+    <label for="name">姓名 *</label>
+    <input id="name" type="text" placeholder="請輸入姓名">
+
+    <label for="phone">手機 *</label>
+    <input id="phone" type="tel" placeholder="請輸入 10 碼手機號碼" maxlength="10" inputmode="numeric">
+    <div id="phoneError" class="field-error">手機號碼需為 10 碼，且須為台灣手機格式。</div>
+
+    <label for="visitDate">預約日期 *</label>
+    <input id="visitDate" type="date">
+
+    <label for="time">預約時間 *</label>
+    <input id="time" type="time" step="1800" required>
+    <div id="timeHint" class="hint">請先選擇門市</div>
+
+    <label for="people">體驗人數</label>
+    <select id="people">
+      <option value="1">1人</option>
+      <option value="2">2人</option>
+      <option value="3">3人</option>
+      <option value="4+">4人以上</option>
+    </select>
+
+    <label for="product">想體驗的產品</label>
+    <select id="product">
+      <option value="">請選擇</option>
+      <option value="人體工學椅">人體工學椅</option>
+      <option value="辦公椅">辦公椅</option>
+      <option value="兒童桌椅">兒童桌椅</option>
+      <option value="經銷合作">經銷合作</option>
+      <option value="企業採購">企業採購</option>
+      <option value="其他">其他</option>
+    </select>
+
+    <label for="note">其他需求（企業採購體驗後，可聯繫客服報價）</label>
+    <textarea id="note" placeholder="例如：想試坐滑翔椅／大宗採購／業務合作"></textarea>
+
+    <div class="section-title">體驗館使用規範</div>
+    <div class="rule-box">
+      本館為無人展示體驗空間，全區設有監視錄影設備。<br>
+      1. 請勿攜帶飲食入內，垃圾請自行帶走。<br>
+      2. 體驗完畢後，請協助將展示椅恢復原位。<br>
+      3. 同一時段可能有其他預約訪客，請保持良好參觀秩序。<br>
+      4. 開門按鈕僅限預約本人使用，請勿轉傳他人。<br>
+      5. 館內產品可自由體驗，請愛惜使用。<br>
+      6. 離館時請確認門片已關妥。<br>
+      7. 如有問題，請透過 LINE 聯繫線上客服。
+    </div>
+
+    <div class="agree-wrap">
+      <input id="agree" type="checkbox">
+      <label for="agree" style="margin:0;font-weight:normal;">
+        我已閱讀並同意體驗館使用規範
+      </label>
+    </div>
+
+    <button id="submitBtn" class="btn" type="button" onclick="submitForm()">送出預約</button>
+    <button id="cancelBookingBtn" class="btn secondary hidden" type="button" onclick="cancelBooking()">取消此預約</button>
+
+    <div id="status" class="status">正在初始化系統...</div>
+
+    <div class="hidden">
+      <input id="userId" type="text">
+      <input id="displayName" type="text">
+      <input id="bookingId" type="text">
+    </div>
+  </div>
+
+  <div id="modal" class="modal">
+    <div class="modal-box">
+      <div id="modalTitle" class="modal-title">提醒</div>
+      <div id="modalText" class="modal-text"></div>
+      <button id="modalConfirmBtn" class="modal-btn" type="button">確定</button>
+    </div>
+  </div>
+
+  <script>
+    /*
+     * 上線前只需要修改以下兩個值：
+     * 1. LIFF_ID：你目前台北館原本的 LIFF ID 可繼續使用
+     * 2. WEB_APP_URL：新版 YSS V2 Apps Script /exec 網址
+     */
+    const LIFF_ID = "2009269118-yjgdw5YM";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynnI28PLfJIYEz1bZwWwIU7O6n9iLhpXmaDNaGiAl3LsrgIXwH3OSGIQYuDc3dZQc/exec";
+    const APP_VERSION = "20260710-v3-card";
+
+    let liffReady = false;
+    let pageMode = "create";
+    let stores = [];
+    let selectedStore = null;
+
+    function setStatus(message, type = "") {
+      const el = document.getElementById("status");
+      el.innerText = message;
+      el.className = "status";
+      if (type === "ok") el.classList.add("ok");
+      if (type === "err") el.classList.add("err");
+    }
+
+    function ensureLatestVersion() {
+      const url = new URL(window.location.href);
+      const currentVersion = url.searchParams.get("v");
+
+      if (currentVersion !== APP_VERSION) {
+        url.searchParams.set("v", APP_VERSION);
+        window.location.replace(url.toString());
+        return false;
+      }
+
+      return true;
+    }
+
+    function showModal(title, text, onConfirm = null) {
+      document.getElementById("modalTitle").innerText = title;
+      document.getElementById("modalText").innerText = text;
+
+      const modal = document.getElementById("modal");
+      const confirmBtn = document.getElementById("modalConfirmBtn");
+
+      confirmBtn.onclick = function () {
+        modal.classList.remove("show");
+        if (typeof onConfirm === "function") onConfirm();
+      };
+
+      modal.classList.add("show");
+    }
+
+    function setSubmitLoading(isLoading) {
+      const btn = document.getElementById("submitBtn");
+      const cancelBtn = document.getElementById("cancelBookingBtn");
+
+      btn.disabled = isLoading;
+      cancelBtn.disabled = isLoading;
+
+      btn.innerHTML = isLoading
+        ? '<span class="loading-inline"><span class="spinner"></span>送出中...</span>'
+        : (pageMode === "edit" ? "確認修改" : "送出預約");
+    }
+
+    function sanitizePhoneInput() {
+      const phoneInput = document.getElementById("phone");
+      phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 10);
+      validatePhoneRealtime();
+    }
+
+    function validatePhoneRealtime() {
+      const phoneInput = document.getElementById("phone");
+      const error = document.getElementById("phoneError");
+      const value = phoneInput.value.trim();
+      const ok = /^09\d{8}$/.test(value);
+
+      if (!value) {
+        phoneInput.classList.remove("input-error");
+        error.style.display = "none";
+        return false;
+      }
+
+      if (!ok) {
+        phoneInput.classList.add("input-error");
+        error.style.display = "block";
+        return false;
+      }
+
+      phoneInput.classList.remove("input-error");
+      error.style.display = "none";
+      return true;
+    }
+
+    function getQueryParam(name) {
+      return new URL(window.location.href).searchParams.get(name) || "";
+    }
+
+    function validateConfig() {
+      if (!LIFF_ID || LIFF_ID.includes("請貼上")) {
+        throw new Error("尚未設定 LIFF_ID");
+      }
+
+      if (
+        !WEB_APP_URL ||
+        WEB_APP_URL.includes("請貼上") ||
+        !WEB_APP_URL.endsWith("/exec")
+      ) {
+        throw new Error("尚未設定新版 YSS Web App /exec 網址");
+      }
+    }
+
+    async function apiGet(action, params = {}) {
+      const url = new URL(WEB_APP_URL);
+      url.searchParams.set("action", action);
+
+      Object.entries(params).forEach(([key, value]) => {
+        url.searchParams.set(key, value ?? "");
+      });
+
+      const response = await fetch(url.toString(), {
+        method: "GET",
+        cache: "no-store"
+      });
+
+      const text = await response.text();
+      let result;
+
+      try {
+        result = JSON.parse(text);
+      } catch (_) {
+        throw new Error("API 回傳不是 JSON：" + text);
+      }
+
+      if (!result.ok) {
+        throw new Error(result.error || result.message || "API 讀取失敗");
+      }
+
+      return result;
+    }
+
+    async function apiPost(payload) {
+      const response = await fetch(WEB_APP_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await response.text();
+      let result;
+
+      try {
+        result = JSON.parse(text);
+      } catch (_) {
+        throw new Error("API 回傳不是 JSON：" + text);
+      }
+
+      if (!result.ok) {
+        throw new Error(result.error || result.message || "API 執行失敗");
+      }
+
+      return result;
+    }
+
+    async function loadStores() {
+      const result = await apiGet("get_stores");
+      stores = Array.isArray(result.stores) ? result.stores : [];
+
+      if (!stores.length) {
+        throw new Error("目前沒有可預約的門市");
+      }
+
+      const container = document.getElementById("storeOptions");
+      container.innerHTML = "";
+
+      stores.forEach(store => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "store-option";
+        button.dataset.storeCode = store.code;
+
+        const startTime = store.startTime || "00:00";
+        const endTime = store.endTime || "23:59";
+
+        button.innerHTML = `
+          <div class="store-option-name">${escapeHtml(store.name || "")}</div>
+          <div class="store-option-address">📍 ${escapeHtml(store.address || "")}</div>
+          <div class="store-option-hours">可預約時間：${escapeHtml(startTime)}－${escapeHtml(endTime)}</div>
+        `;
+
+        button.addEventListener("click", function () {
+          selectStore(store.code);
+        });
+
+        container.appendChild(button);
+      });
+
+      const queryStore = getQueryParam("store").toUpperCase();
+      const validQueryStore = stores.some(store => store.code === queryStore);
+
+      if (validQueryStore) {
+        selectStore(queryStore);
+      } else if (stores.length === 1) {
+        selectStore(stores[0].code);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function selectStore(code) {
+      document.getElementById("storeCode").value = code;
+
+      document.querySelectorAll(".store-option").forEach(button => {
+        button.classList.toggle(
+          "selected",
+          button.dataset.storeCode === code
+        );
+      });
+
+      handleStoreChange();
+    }
+
+    function handleStoreChange() {
+      const code = document.getElementById("storeCode").value;
+      selectedStore = stores.find(store => store.code === code) || null;
+
+      const card = document.getElementById("storeCard");
+      const time = document.getElementById("time");
+      const hint = document.getElementById("timeHint");
+
+      if (!selectedStore) {
+        card.classList.remove("show");
+        hint.innerText = "請先選擇門市";
+        return;
+      }
+
+      document.getElementById("storeNameText").innerText = selectedStore.name || "";
+      document.getElementById("storeAddressText").innerText =
+        selectedStore.address ? "地址：" + selectedStore.address : "";
+
+      const startTime = selectedStore.startTime || "00:00";
+      const endTime = selectedStore.endTime || "23:59";
+
+      document.getElementById("storeHoursText").innerText =
+        "可預約時間：" + startTime + "－" + endTime;
+
+      time.min = startTime;
+      time.max = endTime;
+      hint.innerText = "可預約時間：" + startTime + "－" + endTime;
+
+      const mapWrap = document.getElementById("storeMapWrap");
+      mapWrap.innerHTML = "";
+
+      if (selectedStore.googleMap) {
+        const link = document.createElement("a");
+        link.href = selectedStore.googleMap;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.innerText = "開啟 Google 地圖導航";
+        mapWrap.appendChild(link);
+      }
+
+      card.classList.add("show");
+    }
+
+    function applyEditModeUI() {
+      document.getElementById("pageTitle2").innerText = "修改預約";
+      document.getElementById("editBanner").style.display = "block";
+      document.getElementById("submitBtn").innerText = "確認修改";
+      document.getElementById("cancelBookingBtn").classList.remove("hidden");
+    }
+
+    async function initLIFF() {
+      try {
+        validateConfig();
+
+        if (!ensureLatestVersion()) return;
+
+        setStatus("正在讀取門市資料...");
+        await loadStores();
+
+        setStatus("正在初始化 LINE 身分...");
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          setStatus("尚未登入 LINE，正在導向登入...");
+          liff.login({ redirectUri: location.href });
+          return;
+        }
+
+        const profile = await liff.getProfile();
+
+        document.getElementById("userId").value = profile.userId || "";
+        document.getElementById("displayName").value = profile.displayName || "";
+
+        liffReady = true;
+        document.getElementById("status").style.display = "none";
+
+        await loadEditBookingIfNeeded();
+      } catch (error) {
+        const message = String(error?.message || error);
+
+        if (
+          message.includes("access token expired") ||
+          message.includes("The access token expired")
+        ) {
+          try {
+            if (liff.isLoggedIn()) liff.logout();
+          } catch (_) {}
+
+          liff.login({ redirectUri: location.href });
+          return;
+        }
+
+        setStatus(
+          "系統初始化失敗\n" +
+          message +
+          "\n\n目前網址：" +
+          location.href,
+          "err"
+        );
+      }
+    }
+
+    async function loadEditBookingIfNeeded() {
+      const mode = getQueryParam("mode");
+      const bookingId = getQueryParam("bookingId");
+
+      if (mode !== "edit" || !bookingId || !liffReady) return;
+
+      pageMode = "edit";
+      document.getElementById("bookingId").value = bookingId;
+      applyEditModeUI();
+
+      try {
+        setStatus("載入原預約資料中...");
+
+        const result = await apiGet("get_booking", {
+          bookingId,
+          lineUserId: document.getElementById("userId").value
+        });
+
+        const data = result.data || {};
+
+        selectStore(data.storeCode || "");
+
+        document.getElementById("name").value = data.name || "";
+        document.getElementById("phone").value = (data.phone || "").replace(/^'/, "");
+        document.getElementById("visitDate").value = data.visitDate || "";
+        document.getElementById("time").value = data.bookingTime || "";
+        document.getElementById("people").value = data.people || "1";
+        document.getElementById("product").value = data.product || "";
+        document.getElementById("note").value = data.note || "";
+
+        document.getElementById("status").style.display = "none";
+      } catch (error) {
+        setStatus("載入失敗：\n" + (error.message || error), "err");
+        showModal("載入失敗", error.message || String(error));
+      }
+    }
+
+    function validateForm() {
+      const storeCode = document.getElementById("storeCode").value;
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const visitDate = document.getElementById("visitDate").value;
+      const time = document.getElementById("time").value;
+      const agree = document.getElementById("agree").checked;
+
+      if (!liffReady) {
+        showModal("系統尚未完成", "LINE 身分尚未初始化完成，請稍候幾秒後再試。");
+        return false;
+      }
+
+      if (!storeCode || !selectedStore) {
+        showModal("請選擇門市", "請先選擇預約門市。");
+        return false;
+      }
+
+      if (!name) {
+        showModal("請補填資料", "請輸入姓名。");
+        return false;
+      }
+
+      if (!/^09\d{8}$/.test(phone)) {
+        showModal("手機格式錯誤", "手機號碼需為 10 碼台灣手機格式。");
+        return false;
+      }
+
+      if (!visitDate) {
+        showModal("請補填資料", "請選擇預約日期。");
+        return false;
+      }
+
+      if (!time) {
+        showModal("請補填資料", "請選擇預約時間。");
+        return false;
+      }
+
+      if (!agree) {
+        showModal("請確認規範", "請先勾選同意體驗館使用規範。");
+        return false;
+      }
+
+      const selectedDateTime = new Date(`${visitDate}T${time}:00`);
+
+      if (selectedDateTime <= new Date()) {
+        showModal("時間不可預約", "預約時間必須晚於目前時間。");
+        return false;
+      }
+
+      if (selectedStore.startTime && time < selectedStore.startTime) {
+        showModal("時間不可預約", `此門市最早可預約時間為 ${selectedStore.startTime}。`);
+        return false;
+      }
+
+      if (selectedStore.endTime && time > selectedStore.endTime) {
+        showModal("時間不可預約", `此門市最晚可預約時間為 ${selectedStore.endTime}。`);
+        return false;
+      }
+
+      return true;
+    }
+
+    async function submitForm() {
+      if (!validateForm()) return;
+
+      setSubmitLoading(true);
+      setStatus("資料送出中，請稍候...");
+
+      const payload = {
+        action: pageMode === "edit" ? "update_booking" : "create_booking",
+        bookingId: document.getElementById("bookingId").value,
+        storeCode: document.getElementById("storeCode").value,
+        "門市代碼": document.getElementById("storeCode").value,
+        "LINE UserID": document.getElementById("userId").value,
+        "LINE 暱稱": document.getElementById("displayName").value,
+        "姓名": document.getElementById("name").value.trim(),
+        "手機": document.getElementById("phone").value.trim(),
+        "預約日期": document.getElementById("visitDate").value,
+        "預約時段": document.getElementById("time").value,
+        "參觀人數": document.getElementById("people").value,
+        "體驗產品": document.getElementById("product").value,
+        "備註": document.getElementById("note").value.trim()
+      };
+
+      try {
+        await apiPost(payload);
+
+        setStatus(
+          pageMode === "edit"
+            ? "預約修改成功。"
+            : "預約送出成功，資料已寫入系統。",
+          "ok"
+        );
+
+        showModal(
+          pageMode === "edit" ? "修改成功" : "預約成功",
+          pageMode === "edit"
+            ? "您的預約已更新，系統將透過 LINE 發送通知。"
+            : "您的預約已送出，系統將立即透過 LINE 發送預約成功通知。",
+          function () {
+            if (liff.isInClient()) liff.closeWindow();
+          }
+        );
+      } catch (error) {
+        const message = error?.message || String(error);
+        setStatus("送出失敗：\n" + message, "err");
+        showModal("送出失敗", message);
+      } finally {
+        setSubmitLoading(false);
+      }
+    }
+
+    async function cancelBooking() {
+      const bookingId = document.getElementById("bookingId").value;
+      const lineUserId = document.getElementById("userId").value;
+
+      if (!bookingId) {
+        showModal("無法取消", "查無預約編號。");
+        return;
+      }
+
+      setSubmitLoading(true);
+
+      try {
+        await apiPost({
+          action: "cancel_booking",
+          bookingId,
+          lineUserId
+        });
+
+        showModal("取消成功", "您的預約已取消。", function () {
+          if (liff.isInClient()) liff.closeWindow();
+        });
+      } catch (error) {
+        showModal("取消失敗", error.message || String(error));
+      } finally {
+        setSubmitLoading(false);
+      }
+    }
+
+    document.getElementById("phone").addEventListener("input", sanitizePhoneInput);
+
+    document.getElementById("visitDate").min =
+      new Date().toISOString().slice(0, 10);
+
+    window.onload = initLIFF;
+  </script>
+</body>
+</html>
