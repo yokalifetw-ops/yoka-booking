@@ -159,6 +159,52 @@
       word-break: break-all;
     }
 
+    .store-info-image-wrap {
+      margin: 0 0 14px;
+      display: none;
+    }
+
+    .store-info-image-wrap.show {
+      display: block;
+    }
+
+    .store-info-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 380px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid #e4e7eb;
+      background: #f4f5f7;
+    }
+
+    .store-info-caption {
+      margin-top: 8px;
+      color: var(--subtext);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .store-map-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--brand);
+      color: #fff !important;
+      font-weight: bold;
+      text-decoration: none;
+      word-break: normal !important;
+    }
+
+    .store-map-button:hover {
+      background: var(--brand-dark);
+    }
+
     .section-title {
       margin-top: 20px;
       margin-bottom: 8px;
@@ -407,6 +453,10 @@
     <input id="storeCode" type="hidden">
 
     <div id="storeCard" class="store-card">
+      <div id="storeInfoImageWrap" class="store-info-image-wrap">
+        <img id="storeInfoImage" class="store-info-image" alt="門市入口與導航指示">
+        <div id="storeInfoCaption" class="store-info-caption"></div>
+      </div>
       <div><strong id="storeNameText"></strong></div>
       <div id="storeAddressText"></div>
       <div id="storeHoursText"></div>
@@ -502,7 +552,7 @@
      */
     const LIFF_ID = "2009269118-BDtYZMVp";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxIYSSUrg_8P9nX-lffyoTEUaGy1NVZR9Z9lMryf4q5oNhLP1JLn7wORC_qp55phgl/exec";
-    const APP_VERSION = "20260710-commercial-v3-date-select";
+    const APP_VERSION = "20260712-store-info-image-v1";
 
     let liffReady = false;
     let pageMode = "create";
@@ -874,6 +924,24 @@
       document.getElementById("storeAddressText").innerText =
         selectedStore.address ? "地址：" + selectedStore.address : "";
 
+      const imageWrap = document.getElementById("storeInfoImageWrap");
+      const image = document.getElementById("storeInfoImage");
+      const imageCaption = document.getElementById("storeInfoCaption");
+      const infoImageUrl = String(selectedStore.infoImageUrl || "").trim();
+      const infoImageCaption = String(selectedStore.infoImageCaption || "").trim();
+
+      imageWrap.classList.remove("show");
+      image.removeAttribute("src");
+      imageCaption.innerText = "";
+
+      if (infoImageUrl) {
+        image.src = infoImageUrl;
+        image.alt = (selectedStore.name || "門市") + "入口與導航指示";
+        imageCaption.innerText = infoImageCaption;
+        imageCaption.style.display = infoImageCaption ? "block" : "none";
+        imageWrap.classList.add("show");
+      }
+
       const mode = selectedStore.bookingMode || "預約制";
       const displayTime = selectedStore.displayTimeText || "";
       const weekday = selectedStore.weekdayHours || "";
@@ -896,6 +964,7 @@
         link.href = selectedStore.googleMap;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
+        link.className = "store-map-button";
         link.innerText = "開啟 Google 地圖導航";
         mapWrap.appendChild(link);
       }
@@ -1080,7 +1149,7 @@
       const selectedDateTime = new Date(`${visitDate}T${time}:00`);
       const now = new Date();
       const maxBookingDate = new Date(now);
-      maxBookingDate.setMonth(maxBookingDate.getMonth() + 3);
+      maxBookingDate.setDate(maxBookingDate.getDate() + 30);
       maxBookingDate.setHours(23, 59, 59, 999);
 
       if (selectedDateTime <= now) {
@@ -1089,7 +1158,7 @@
       }
 
       if (selectedDateTime > maxBookingDate) {
-        showModal("日期不可預約", "目前僅開放預約三個月內的日期。");
+        showModal("日期不可預約", "目前僅開放預約30天內的日期。");
         return false;
       }
 
