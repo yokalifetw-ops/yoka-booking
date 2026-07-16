@@ -1149,7 +1149,7 @@
       const selectedDateTime = new Date(`${visitDate}T${time}:00`);
       const now = new Date();
       const maxBookingDate = new Date(now);
-      maxBookingDate.setDate(maxBookingDate.getDate() + 15);
+      maxBookingDate.setDate(maxBookingDate.getDate() + 14);
       maxBookingDate.setHours(23, 59, 59, 999);
 
       if (selectedDateTime <= now) {
@@ -1158,7 +1158,7 @@
       }
 
       if (selectedDateTime > maxBookingDate) {
-        showModal("日期不可預約", "目前僅開放預約15天內的日期。");
+        showModal("日期不可預約", "目前僅開放預約14天內的日期。");
         return false;
       }
 
