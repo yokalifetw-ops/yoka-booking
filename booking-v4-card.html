@@ -441,9 +441,11 @@
     </div>
 
     <div class="top-note">
+      ．完成預約前，請先加入 YOKA 官方 LINE 好友。<br>
+      ．預約成功通知、開門按鈕及改期資訊皆透過 LINE 發送。<br>
+      ．未加入好友或封鎖官方帳號，將無法完成預約。<br>
       ．同一 LINE 帳號於有效預約期間內不可重複預約。<br>
-      ．預約完成後，系統將立即發送預約成功通知。<br>
-      ．若您需即時體驗，預約選擇最近時間即可。
+      ．若您需即時體驗，請選擇最近可預約時間。
     </div>
 
     <label>預約門市 *</label>
@@ -552,12 +554,13 @@
      */
     const LIFF_ID = "2009269118-BDtYZMVp";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxIYSSUrg_8P9nX-lffyoTEUaGy1NVZR9Z9lMryf4q5oNhLP1JLn7wORC_qp55phgl/exec";
-    const APP_VERSION = "20260712-store-info-image-v1";
+    const APP_VERSION = "20260719-friendship-required-v1";
 
     let liffReady = false;
     let pageMode = "create";
     let stores = [];
     let selectedStore = null;
+    let isOfficialAccountFriend = false;
 
     function setStatus(message, type = "") {
       const el = document.getElementById("status");
@@ -593,6 +596,64 @@
       };
 
       modal.classList.add("show");
+    }
+
+    async function checkOfficialAccountFriendship() {
+      try {
+        const result = await liff.getFriendship();
+        isOfficialAccountFriend = result.friendFlag === true;
+
+        console.log(
+          "YOKA 官方帳號好友狀態：",
+          isOfficialAccountFriend
+        );
+
+        return isOfficialAccountFriend;
+      } catch (error) {
+        console.error("好友狀態檢查失敗：", error);
+        isOfficialAccountFriend = false;
+        return false;
+      }
+    }
+
+    async function requireOfficialAccountFriendship() {
+      let isFriend = await checkOfficialAccountFriendship();
+
+      if (isFriend) {
+        return true;
+      }
+
+      try {
+        setStatus(
+          "請先加入 YOKA 官方 LINE 好友，才能進行預約。",
+          "err"
+        );
+
+        await liff.requestFriendship();
+      } catch (error) {
+        console.error("無法開啟加入好友視窗：", error);
+
+        showModal(
+          "無法開啟加入好友畫面",
+          "請確認已從 LINE 內開啟本預約頁，並重新嘗試。"
+        );
+
+        return false;
+      }
+
+      isFriend = await checkOfficialAccountFriendship();
+
+      if (!isFriend) {
+        showModal(
+          "尚未加入好友",
+          "系統仍未偵測到您已加入 YOKA 官方帳號。\n\n請完成加入好友或解除封鎖後，再送出預約。"
+        );
+
+        return false;
+      }
+
+      document.getElementById("status").style.display = "none";
+      return true;
     }
 
     function setSubmitLoading(isLoading) {
@@ -1026,6 +1087,19 @@
         document.getElementById("userId").value = profile.userId || "";
         document.getElementById("displayName").value = profile.displayName || "";
 
+        const friendshipOk = await requireOfficialAccountFriendship();
+
+        if (!friendshipOk) {
+          liffReady = false;
+
+          setStatus(
+            "請先加入 YOKA 官方 LINE 好友，才能進行預約。",
+            "err"
+          );
+
+          return;
+        }
+
         liffReady = true;
         document.getElementById("status").style.display = "none";
 
@@ -1184,6 +1258,12 @@
 
     async function submitForm() {
       if (!validateForm()) return;
+
+      const friendshipOk = await requireOfficialAccountFriendship();
+
+      if (!friendshipOk) {
+        return;
+      }
 
       setSubmitLoading(true);
       setStatus("資料送出中，請稍候...");
