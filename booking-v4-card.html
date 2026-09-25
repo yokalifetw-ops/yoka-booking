@@ -554,7 +554,8 @@
      */
     const LIFF_ID = "2009269118-BDtYZMVp";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxIYSSUrg_8P9nX-lffyoTEUaGy1NVZR9Z9lMryf4q5oNhLP1JLn7wORC_qp55phgl/exec";
-    const APP_VERSION = "20260925-liff-init-v2";
+    const APP_VERSION = "20260925-fast-stable-v3";
+    const STORE_CACHE_KEY = "YOKA_STORES_CACHE_V3";
 
     let liffReady = false;
     let pageMode = "create";
@@ -923,41 +924,72 @@
       }
     }
 
-    async function loadStores() {
-      const result = await apiGet("get_stores");
-      stores = Array.isArray(result.stores) ? result.stores : [];
+    const FALLBACK_STORES = [
+      {code:"TPE",name:"台北體驗館",displayOrder:1,bookingMode:"預約制",bookingEnabled:true,address:"台北市萬華區萬大路 138 號 B1",displayTimeText:"24H 預約制",startTime:"00:00",endTime:"23:30"},
+      {code:"HSZ",name:"新竹體驗館",displayOrder:2,bookingMode:"預約制",bookingEnabled:true,address:"新竹縣竹北市竹北里環北路一段 71 巷 2 號",displayTimeText:"24H 預約制",startTime:"00:00",endTime:"23:30"},
+      {code:"TXG",name:"台中展廳",displayOrder:3,bookingMode:"免預約",bookingEnabled:false,address:"台中市北屯區后庄三街 216 巷 13 號",noticeText:"無需預約，營業時間內可直接前往。"},
+      {code:"KHH",name:"高雄館",displayOrder:4,bookingMode:"即將開幕",bookingEnabled:false,noticeText:"即將開幕，敬請期待。"}
+    ];
 
-      if (!stores.length) {
-        throw new Error("目前沒有啟用中的門市");
-      }
+    function readStoreCache() {
+      try {
+        const raw = localStorage.getItem(STORE_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed?.stores) && parsed.stores.length ? parsed.stores : null;
+      } catch (_) { return null; }
+    }
 
-      stores.sort((a, b) =>
-        Number(a.displayOrder || 999) - Number(b.displayOrder || 999)
-      );
+    function saveStoreCache(list) {
+      try { localStorage.setItem(STORE_CACHE_KEY, JSON.stringify({savedAt:Date.now(),stores:list})); } catch (_) {}
+    }
+
+    function renderStores(list, preserveSelection = true) {
+      const previousCode = preserveSelection ? String(document.getElementById("storeCode").value || "") : "";
+      stores = Array.isArray(list) ? list.slice() : [];
+      stores.sort((a,b) => Number(a.displayOrder || 999) - Number(b.displayOrder || 999));
 
       const container = document.getElementById("storeOptions");
       container.innerHTML = "";
-
       stores.forEach(store => {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "store-option";
         button.dataset.storeCode = store.code;
         button.innerHTML = `<div class="store-option-name">${escapeHtml(store.name || "")}</div>`;
-        button.addEventListener("click", function () {
-          selectStore(store.code);
-        });
+        button.addEventListener("click", () => selectStore(store.code));
         container.appendChild(button);
       });
 
       const queryStore = getQueryParam("store").toUpperCase();
-      const validQueryStore = stores.some(store => store.code === queryStore);
+      const target = [previousCode, queryStore, stores[0]?.code].find(code => code && stores.some(store => store.code === code));
+      if (target) selectStore(target);
+    }
 
-      if (validQueryStore) {
-        selectStore(queryStore);
-      } else if (stores.length) {
-        selectStore(stores[0].code);
+    function loadStoresInstantly() {
+      const cached = readStoreCache();
+      renderStores(cached || FALLBACK_STORES, false);
+    }
+
+    async function refreshStoresInBackground() {
+      try {
+        const result = await apiGet("get_stores");
+        const fresh = Array.isArray(result.stores) ? result.stores : [];
+        if (!fresh.length) return false;
+        saveStoreCache(fresh);
+        renderStores(fresh, true);
+        return true;
+      } catch (error) {
+        console.warn("背景同步門市資料失敗，繼續使用快取/內建資料：", error);
+        return false;
       }
+    }
+
+    async function loadStores() {
+      // 相容舊呼叫：畫面立即可用，API 僅在背景同步，不阻塞使用者。
+      loadStoresInstantly();
+      refreshStoresInBackground();
+      return stores;
     }
 
     function escapeHtml(value) {
@@ -1089,7 +1121,11 @@
 
         if (!ensureLatestVersion()) return;
 
-        // 先完成 LIFF 初始化，再進行跨網域 API 請求
+        // 門市先用快取/內建資料立即顯示，不等待 Apps Script。
+        loadStoresInstantly();
+        refreshStoresInBackground();
+
+        // LIFF 與門市背景同步彼此獨立，避免 Google API 偶發延遲拖慢整頁。
         setStatus("正在初始化 LINE...");
         await liff.init({ liffId: LIFF_ID });
 
@@ -1098,9 +1134,6 @@
           liff.login({ redirectUri: location.href });
           return;
         }
-
-        setStatus("正在讀取門市資料...");
-        await loadStores();
 
         setStatus("正在讀取 LINE 身分...");
         const profile = await liff.getProfile();
