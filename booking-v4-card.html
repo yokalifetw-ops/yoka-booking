@@ -554,7 +554,7 @@
      */
     const LIFF_ID = "2009269118-BDtYZMVp";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxIYSSUrg_8P9nX-lffyoTEUaGy1NVZR9Z9lMryf4q5oNhLP1JLn7wORC_qp55phgl/exec";
-    const APP_VERSION = "20260719-friendship-required-v1";
+    const APP_VERSION = "20260925-liff-init-v2";
 
     let liffReady = false;
     let pageMode = "create";
@@ -718,30 +718,49 @@
     async function apiGet(action, params = {}) {
       const url = new URL(WEB_APP_URL);
       url.searchParams.set("action", action);
+      url.searchParams.set("_t", Date.now());
 
       Object.entries(params).forEach(([key, value]) => {
         url.searchParams.set(key, value ?? "");
       });
 
-      const response = await fetch(url.toString(), {
-        method: "GET",
-        cache: "no-store"
-      });
-
-      const text = await response.text();
-      let result;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
       try {
-        result = JSON.parse(text);
-      } catch (_) {
-        throw new Error("API 回傳不是 JSON：" + text);
-      }
+        const response = await fetch(url.toString(), {
+          method: "GET",
+          cache: "no-store",
+          redirect: "follow",
+          signal: controller.signal
+        });
 
-      if (!result.ok) {
-        throw new Error(result.error || result.message || "API 讀取失敗");
-      }
+        if (!response.ok) {
+          throw new Error("API HTTP 錯誤：" + response.status);
+        }
 
-      return result;
+        const text = await response.text();
+        let result;
+
+        try {
+          result = JSON.parse(text);
+        } catch (_) {
+          throw new Error("API 回傳格式錯誤");
+        }
+
+        if (!result.ok) {
+          throw new Error(result.error || result.message || "API 讀取失敗");
+        }
+
+        return result;
+      } catch (error) {
+        if (error && error.name === "AbortError") {
+          throw new Error("門市資料讀取逾時，請重新整理後再試。");
+        }
+        throw error;
+      } finally {
+        clearTimeout(timeoutId);
+      }
     }
 
     async function apiPost(payload) {
@@ -1070,10 +1089,8 @@
 
         if (!ensureLatestVersion()) return;
 
-        setStatus("正在讀取門市資料...");
-        await loadStores();
-
-        setStatus("正在初始化 LINE 身分...");
+        // 先完成 LIFF 初始化，再進行跨網域 API 請求
+        setStatus("正在初始化 LINE...");
         await liff.init({ liffId: LIFF_ID });
 
         if (!liff.isLoggedIn()) {
@@ -1082,6 +1099,10 @@
           return;
         }
 
+        setStatus("正在讀取門市資料...");
+        await loadStores();
+
+        setStatus("正在讀取 LINE 身分...");
         const profile = await liff.getProfile();
 
         document.getElementById("userId").value = profile.userId || "";
@@ -1091,12 +1112,10 @@
 
         if (!friendshipOk) {
           liffReady = false;
-
           setStatus(
             "請先加入 YOKA 官方 LINE 好友，才能進行預約。",
             "err"
           );
-
           return;
         }
 
@@ -1105,6 +1124,7 @@
 
         await loadEditBookingIfNeeded();
       } catch (error) {
+        console.error("YOKA LIFF 初始化失敗：", error);
         const message = String(error?.message || error);
 
         if (
@@ -1117,6 +1137,14 @@
 
           liff.login({ redirectUri: location.href });
           return;
+        }
+
+        const storeContainer = document.getElementById("storeOptions");
+        if (storeContainer) {
+          storeContainer.innerHTML =
+            '<div class="store-options-loading" style="color:#c5221f;">' +
+            '門市資料載入失敗，請重新整理頁面。' +
+            '</div>';
         }
 
         setStatus(
