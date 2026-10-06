@@ -422,14 +422,40 @@
       margin-bottom: 16px;
       display: none;
     }
+
+    .language-switch {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .language-switch button {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--subtext);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .language-switch button.active {
+      border-color: var(--brand);
+      color: var(--brand-dark);
+      background: #eefaf2;
+    }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="brand-badge">YOKA｜24H 人體工學椅體驗館</div>
+    <div class="language-switch" aria-label="Language">
+      <button id="langZhBtn" type="button" onclick="setLanguage('zh-TW')">繁中</button>
+      <button id="langEnBtn" type="button" onclick="setLanguage('en')">EN</button>
+    </div>
+    <div class="brand-badge" id="brandBadge">YOKA｜24H 人體工學椅體驗館</div>
 
-    <h1>YOKA 佑客 人體工學椅</h1>
+    <h1 id="brandTitle">YOKA 佑客 人體工學椅</h1>
     <h1 id="pageTitle2">體驗館預約</h1>
 
     <div class="desc" id="pageDesc">
@@ -440,7 +466,7 @@
       您目前正在修改既有預約，門市將依原預約自動帶入。
     </div>
 
-    <div class="top-note">
+    <div class="top-note" id="topNote">
       ．完成預約前，請先加入 YOKA 官方 LINE 好友。<br>
       ．預約通知、開門按鈕皆透過 LINE 發送。<br>
       ．未加入好友或封鎖官方帳號，將無法完成預約。<br>
@@ -448,7 +474,7 @@
       ．若您需即時體驗，選擇最近預約時間即可，預約完成系統會立即發送開門資訊。
     </div>
 
-    <label>預約門市 *</label>
+    <label id="storeLabel">預約門市 *</label>
     <div id="storeOptions" class="store-options">
       <div class="store-options-loading">門市載入中...</div>
     </div>
@@ -466,21 +492,21 @@
     </div>
 
     <div id="bookingFormSection">
-    <label for="name">暱稱 *</label>
+    <label id="nameLabel" for="name">暱稱 *</label>
     <input id="name" type="text" placeholder="請輸入暱稱">
 
-    <label for="phone">手機 *</label>
+    <label id="phoneLabel" for="phone">手機 *</label>
     <input id="phone" type="tel" placeholder="請輸入 10 碼手機號碼" maxlength="10" inputmode="numeric">
     <div id="phoneError" class="field-error">手機號碼需為 10 碼，且須為台灣手機格式。</div>
 
-    <label for="visitDate">預約日期 *</label>
+    <label id="dateLabel" for="visitDate">預約日期 *</label>
     <select id="visitDate"><option value="">請選擇預約日期</option></select>
 
-    <label for="time">預約時間 *</label>
+    <label id="timeLabel" for="time">預約時間 *</label>
     <select id="time" required><option value="">請先選擇門市與日期</option></select>
     <div id="timeHint" class="hint">請先選擇門市</div>
 
-    <label for="people">體驗人數</label>
+    <label id="peopleLabel" for="people">體驗人數</label>
     <select id="people">
       <option value="1">1人</option>
       <option value="2">2人</option>
@@ -488,7 +514,7 @@
       <option value="4+">4人以上</option>
     </select>
 
-    <label for="product">想體驗的產品</label>
+    <label id="productLabel" for="product">想體驗的產品</label>
     <select id="product">
       <option value="">請選擇</option>
       <option value="人體工學椅">人體工學椅</option>
@@ -499,11 +525,11 @@
       <option value="其他">其他</option>
     </select>
 
-    <label for="note">其他需求（企業採購體驗後，可聯繫客服報價）</label>
+    <label id="noteLabel" for="note">其他需求（企業採購體驗後，可聯繫客服報價）</label>
     <textarea id="note" placeholder="例如：想試坐滑翔椅／大宗採購／業務合作"></textarea>
 
-    <div class="section-title">體驗館使用規範</div>
-    <div class="rule-box">
+    <div class="section-title" id="rulesTitle">體驗館使用規範</div>
+    <div class="rule-box" id="rulesBox">
       本館為 24H 無人展示體驗空間，全區設有監視錄影設備，為維護參觀品質及所有預約貴賓權益，敬請配合以下規範：<br><br>
 
       1. 請勿攜帶飲食入內，垃圾請自行帶離。<br>
@@ -518,7 +544,7 @@
 
     <div class="agree-wrap">
       <input id="agree" type="checkbox">
-      <label for="agree" style="margin:0;font-weight:normal;">
+      <label id="agreeLabel" for="agree" style="margin:0;font-weight:normal;">
         我已閱讀並同意遵守本館參觀規範。
       </label>
     </div>
@@ -554,7 +580,7 @@
      */
     const LIFF_ID = "2009269118-BDtYZMVp";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxIYSSUrg_8P9nX-lffyoTEUaGy1NVZR9Z9lMryf4q5oNhLP1JLn7wORC_qp55phgl/exec";
-    const APP_VERSION = "20260925-fast-stable-v3";
+    const APP_VERSION = "20261006-multilingual-zh-en-v1";
     const STORE_CACHE_KEY = "YOKA_STORES_CACHE_V3";
 
     let liffReady = false;
@@ -562,6 +588,63 @@
     let stores = [];
     let selectedStore = null;
     let isOfficialAccountFriend = false;
+
+    const LANG_KEY = "YOKA_BOOKING_LANG_V1";
+    let currentLang = localStorage.getItem(LANG_KEY) || (getQueryParam("lang") === "en" ? "en" : "zh-TW");
+
+    const I18N = {
+      "zh-TW": {
+        title:"YOKA 佑客家具｜體驗館預約", brandBadge:"YOKA｜24H 人體工學椅體驗館", brandTitle:"YOKA 佑客 人體工學椅", pageTitle:"體驗館預約",
+        desc:"請選擇體驗館並填寫以下資料，送出後將透過 LINE 提供預約及門禁資訊。",
+        editBanner:"您目前正在修改既有預約，門市將依原預約自動帶入。",
+        topNote:"．完成預約前，請先加入 YOKA 官方 LINE 好友。<br>．預約通知、開門按鈕皆透過 LINE 發送。<br>．未加入好友或封鎖官方帳號，將無法完成預約。<br>．同一 LINE 帳號於有效預約期間內不可重複預約。<br>．若您需即時體驗，選擇最近預約時間即可，預約完成系統會立即發送開門資訊。",
+        storeLabel:"預約門市 *", loadingStores:"門市載入中...", nameLabel:"暱稱 *", namePlaceholder:"請輸入暱稱", phoneLabel:"手機 *", phonePlaceholder:"請輸入 10 碼手機號碼", phoneError:"手機號碼需為 10 碼，且須為台灣手機格式。",
+        dateLabel:"預約日期 *", chooseDate:"請選擇預約日期", timeLabel:"預約時間 *", chooseStoreDate:"請先選擇門市與日期", chooseStore:"請先選擇門市", chooseTime:"請選擇預約時間", noTimes:"今日已無可預約時段",
+        peopleLabel:"體驗人數", people:["1人","2人","3人","4人以上"], productLabel:"想體驗的產品", choose:"請選擇", products:["人體工學椅","辦公椅","兒童桌椅","經銷合作","企業採購","其他"],
+        noteLabel:"其他需求（企業採購體驗後，可聯繫客服報價）", notePlaceholder:"例如：想試坐滑翔椅／大宗採購／業務合作",
+        rulesTitle:"體驗館使用規範", rules:"本館為 24H 無人展示體驗空間，全區設有監視錄影設備，為維護參觀品質及所有預約貴賓權益，敬請配合以下規範：<br><br>1. 請勿攜帶飲食入內，垃圾請自行帶離。<br>2. 請愛惜展示商品，體驗後請恢復原位。<br>3. 商品皆附有QR Code，可自行查看操作方式。<br>4. 開門權限僅限預約本人使用，請勿轉傳。<br>5. 12 歲以下孩童須由家長全程陪同。<br>6. 人為造成設備損壞須負擔維修費用；離館前請確認門片已關閉。<br><br>※ 完成預約並入館體驗，即視為同意遵守本館參觀規範。",
+        agree:"我已閱讀並同意遵守本館參觀規範。", submit:"送出預約", update:"確認修改", cancel:"取消此預約", reminder:"提醒", confirm:"確定", map:"開啟 Google 地圖導航", address:"地址：", weekday:"平日：", holiday:"例假日：", bookable:"可預約時間：", noBooking:"無需預約，營業時間內可直接前往。", coming:"即將開幕，敬請期待。", paused:"目前暫停預約，造成不便敬請見諒。", unavailable:"此門市目前不開放線上預約。",
+        storeNames:{TPE:"台北體驗館",HSZ:"新竹體驗館",TXG:"台中展廳",KHH:"高雄館"},
+        addresses:{TPE:"台北市萬華區萬大路 138 號 B1",HSZ:"新竹縣竹北市竹北里環北路一段 71 巷 2 號",TXG:"台中市北屯區后庄三街 216 巷 13 號"}
+      },
+      en: {
+        title:"YOKA Furniture | Showroom Reservation", brandBadge:"YOKA | 24H Ergonomic Chair Showroom", brandTitle:"YOKA Ergonomic Chairs", pageTitle:"Showroom Reservation",
+        desc:"Select a showroom and complete the form below. Reservation and door-access information will be sent via LINE.",
+        editBanner:"You are editing an existing reservation. The original showroom will be selected automatically.",
+        topNote:"• Please add the YOKA Official LINE account before completing your reservation.<br>• Reservation notices and door-access buttons are sent via LINE.<br>• You cannot complete a reservation if the account is not added or is blocked.<br>• One LINE account may only have one active reservation at a time.<br>• For an immediate visit, choose the nearest available time. Door-access information will be sent after your reservation is confirmed.",
+        storeLabel:"Showroom *", loadingStores:"Loading showrooms...", nameLabel:"Name / Nickname *", namePlaceholder:"Enter your name or nickname", phoneLabel:"Mobile Number *", phonePlaceholder:"Enter a 10-digit Taiwan mobile number", phoneError:"Please enter a valid 10-digit Taiwan mobile number starting with 09.",
+        dateLabel:"Reservation Date *", chooseDate:"Select a reservation date", timeLabel:"Reservation Time *", chooseStoreDate:"Select a showroom and date first", chooseStore:"Select a showroom first", chooseTime:"Select a reservation time", noTimes:"No more available times today",
+        peopleLabel:"Number of Visitors", people:["1 person","2 people","3 people","4+ people"], productLabel:"Products You'd Like to Try", choose:"Please select", products:["Ergonomic Chair","Office Chair","Kids Desk & Chair","Dealer Partnership","Corporate Purchase","Other"],
+        noteLabel:"Other Requests (Corporate customers may contact us for a quotation after the visit)", notePlaceholder:"e.g. chair models to try / bulk purchase / business cooperation",
+        rulesTitle:"Showroom Rules", rules:"This is a 24-hour self-service showroom with video surveillance. To maintain a safe and pleasant experience for all visitors, please follow these rules:<br><br>1. No food or drinks. Please take all trash with you.<br>2. Please handle display products with care and return them to their original positions after use.<br>3. Products have QR codes that provide operating instructions.<br>4. Door-access permission is for the person who made the reservation only. Do not share it with others.<br>5. Children under 12 must be accompanied by a parent or guardian at all times.<br>6. Visitors are responsible for repair costs for damage caused by misuse. Please make sure the door is fully closed before leaving.<br><br>※ By completing a reservation and entering the showroom, you agree to follow these rules.",
+        agree:"I have read and agree to follow the showroom rules.", submit:"Submit Reservation", update:"Confirm Changes", cancel:"Cancel Reservation", reminder:"Notice", confirm:"OK", map:"Open in Google Maps", address:"Address: ", weekday:"Weekdays: ", holiday:"Holidays: ", bookable:"Available hours: ", noBooking:"No reservation is required. Please visit during business hours.", coming:"Coming soon. Stay tuned!", paused:"Reservations are temporarily unavailable. We apologize for the inconvenience.", unavailable:"Online reservations are currently unavailable for this showroom.",
+        storeNames:{TPE:"Taipei Experience Center",HSZ:"Hsinchu Experience Center",TXG:"Taichung Experience Center",KHH:"Kaohsiung Experience Center"},
+        addresses:{TPE:"B1, No. 138, Wanda Rd., Wanhua Dist., Taipei City",HSZ:"No. 2, Ln. 71, Sec. 1, Huanbei Rd., Zhubei City, Hsinchu County",TXG:"No. 13, Ln. 216, Houzhuang 3rd St., Beitun Dist., Taichung City"}
+      }
+    };
+    function tr(key){ return I18N[currentLang]?.[key] ?? I18N["zh-TW"]?.[key] ?? key; }
+    function localizeStoreName(store){ return tr("storeNames")?.[store?.code] || store?.name || ""; }
+    function localizeAddress(store){ return tr("addresses")?.[store?.code] || store?.address || ""; }
+    function setLanguage(lang){
+      currentLang = lang === "en" ? "en" : "zh-TW";
+      try { localStorage.setItem(LANG_KEY,currentLang); } catch(_){}
+      document.documentElement.lang = currentLang === "en" ? "en" : "zh-Hant";
+      applyLanguage();
+    }
+    function applyLanguage(){
+      document.title=tr("title");
+      const ids={brandBadge:"brandBadge",brandTitle:"brandTitle",pageTitle:"pageTitle2",desc:"pageDesc",editBanner:"editBanner",storeLabel:"storeLabel",nameLabel:"nameLabel",phoneLabel:"phoneLabel",phoneError:"phoneError",dateLabel:"dateLabel",timeLabel:"timeLabel",peopleLabel:"peopleLabel",productLabel:"productLabel",noteLabel:"noteLabel",rulesTitle:"rulesTitle",agree:"agreeLabel",cancel:"cancelBookingBtn"};
+      Object.entries(ids).forEach(([k,id])=>{const e=document.getElementById(id);if(e)e.textContent=tr(k);});
+      document.getElementById("topNote").innerHTML=tr("topNote");
+      document.getElementById("rulesBox").innerHTML=tr("rules");
+      document.getElementById("name").placeholder=tr("namePlaceholder"); document.getElementById("phone").placeholder=tr("phonePlaceholder"); document.getElementById("note").placeholder=tr("notePlaceholder");
+      document.getElementById("modalConfirmBtn").textContent=tr("confirm");
+      document.getElementById("langZhBtn").classList.toggle("active",currentLang==="zh-TW"); document.getElementById("langEnBtn").classList.toggle("active",currentLang==="en");
+      document.getElementById("submitBtn").textContent=pageMode==="edit"?tr("update"):tr("submit");
+      const people=document.getElementById("people"); if(people){Array.from(people.options).forEach((o,i)=>{if(tr("people")[i])o.textContent=tr("people")[i];});}
+      const product=document.getElementById("product"); if(product){const labels=[tr("choose"),...tr("products")];Array.from(product.options).forEach((o,i)=>{if(labels[i])o.textContent=labels[i];});}
+      setBookingDateLimits(); buildTimeOptions(); if(stores.length) renderStores(stores,true);
+    }
 
     function setStatus(message, type = "") {
       const el = document.getElementById("status");
@@ -665,8 +748,8 @@
       cancelBtn.disabled = isLoading;
 
       btn.innerHTML = isLoading
-        ? '<span class="loading-inline"><span class="spinner"></span>送出中...</span>'
-        : (pageMode === "edit" ? "確認修改" : "送出預約");
+        ? '<span class="loading-inline"><span class="spinner"></span>' + (currentLang === "en" ? "Submitting..." : "送出中...") + '</span>'
+        : (pageMode === "edit" ? tr("update") : tr("submit"));
     }
 
     function sanitizePhoneInput() {
@@ -808,11 +891,9 @@
       maxDate.setDate(maxDate.getDate() + 14);
 
       dateSelect.innerHTML =
-        '<option value="">請選擇預約日期</option>';
+        '<option value="">' + tr("chooseDate") + '</option>';
 
-      const weekNames = [
-        "日", "一", "二", "三", "四", "五", "六"
-      ];
+      const weekNames = currentLang === "en" ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] : ["日", "一", "二", "三", "四", "五", "六"];
 
       const cursor = new Date(today);
 
@@ -822,10 +903,7 @@
 
         option.value = value;
         option.textContent =
-          value.replaceAll("-", "/") +
-          "（" +
-          weekNames[cursor.getDay()] +
-          "）";
+          value.replaceAll("-", "/") + (currentLang === "en" ? " (" : "（") + weekNames[cursor.getDay()] + (currentLang === "en" ? ")" : "）");
 
         dateSelect.appendChild(option);
         cursor.setDate(cursor.getDate() + 1);
@@ -856,7 +934,7 @@
       if (!selectedStore || selectedStore.bookingMode !== "預約制") {
         const option = document.createElement("option");
         option.value = "";
-        option.textContent = "此門市無需預約";
+        option.textContent = tr("noBooking");
         timeSelect.appendChild(option);
         timeSelect.disabled = true;
         return;
@@ -865,7 +943,7 @@
       if (!dateValue) {
         const option = document.createElement("option");
         option.value = "";
-        option.textContent = "請先選擇預約日期";
+        option.textContent = tr("chooseDate");
         timeSelect.appendChild(option);
         timeSelect.disabled = true;
         return;
@@ -897,7 +975,7 @@
 
       const placeholder = document.createElement("option");
       placeholder.value = "";
-      placeholder.textContent = "請選擇預約時間";
+      placeholder.textContent = tr("chooseTime");
       timeSelect.appendChild(placeholder);
 
       for (let minutes = minimumMinutes; minutes <= endMinutes; minutes += 30) {
@@ -920,7 +998,7 @@
       timeSelect.disabled = timeSelect.options.length <= 1;
 
       if (timeSelect.options.length <= 1) {
-        placeholder.textContent = "今日已無可預約時段";
+        placeholder.textContent = tr("noTimes");
       }
     }
 
@@ -956,7 +1034,7 @@
         button.type = "button";
         button.className = "store-option";
         button.dataset.storeCode = store.code;
-        button.innerHTML = `<div class="store-option-name">${escapeHtml(store.name || "")}</div>`;
+        button.innerHTML = `<div class="store-option-name">${escapeHtml(localizeStoreName(store))}</div>`;
         button.addEventListener("click", () => selectStore(store.code));
         container.appendChild(button);
       });
@@ -1032,9 +1110,9 @@
         return;
       }
 
-      document.getElementById("storeNameText").innerText = selectedStore.name || "";
+      document.getElementById("storeNameText").innerText = localizeStoreName(selectedStore);
       document.getElementById("storeAddressText").innerText =
-        selectedStore.address ? "地址：" + selectedStore.address : "";
+        localizeAddress(selectedStore) ? tr("address") + localizeAddress(selectedStore) : "";
 
       const imageWrap = document.getElementById("storeInfoImageWrap");
       const image = document.getElementById("storeInfoImage");
@@ -1048,7 +1126,7 @@
 
       if (infoImageUrl) {
         image.src = infoImageUrl;
-        image.alt = (selectedStore.name || "門市") + "入口與導航指示";
+        image.alt = localizeStoreName(selectedStore) + (currentLang === "en" ? " entrance and navigation" : "入口與導航指示");
         imageCaption.innerText = infoImageCaption;
         imageCaption.style.display = infoImageCaption ? "block" : "none";
         imageWrap.classList.add("show");
@@ -1062,8 +1140,8 @@
 
       const infoLines = [];
       if (displayTime) infoLines.push(displayTime);
-      if (weekday) infoLines.push("平日：" + weekday);
-      if (holiday) infoLines.push("例假日：" + holiday);
+      if (weekday) infoLines.push(tr("weekday") + weekday);
+      if (holiday) infoLines.push(tr("holiday") + holiday);
       if (notice) infoLines.push(notice);
 
       document.getElementById("storeHoursText").innerText = infoLines.join("\n");
@@ -1077,7 +1155,7 @@
         link.target = "_blank";
         link.rel = "noopener noreferrer";
         link.className = "store-map-button";
-        link.innerText = "開啟 Google 地圖導航";
+        link.innerText = tr("map");
         mapWrap.appendChild(link);
       }
 
@@ -1089,7 +1167,7 @@
         time.min = selectedStore.startTime || "00:00";
         time.max = selectedStore.endTime || "23:59";
         hint.innerText = displayTime ||
-          ("可預約時間：" + time.min + "－" + time.max);
+          (tr("bookable") + time.min + "－" + time.max);
         return;
       }
 
@@ -1098,20 +1176,20 @@
 
       if (mode === "免預約") {
         noBookingNote.innerText =
-          notice || "無需預約，營業時間內可直接前往。";
+          (currentLang === "en" ? tr("noBooking") : (notice || tr("noBooking")));
       } else if (mode === "即將開幕") {
-        noBookingNote.innerText = notice || "即將開幕，敬請期待。";
+        noBookingNote.innerText = (currentLang === "en" ? tr("coming") : (notice || tr("coming")));
       } else if (mode === "暫停預約") {
-        noBookingNote.innerText = notice || "目前暫停預約，造成不便敬請見諒。";
+        noBookingNote.innerText = (currentLang === "en" ? tr("paused") : (notice || tr("paused")));
       } else {
-        noBookingNote.innerText = notice || "此門市目前不開放線上預約。";
+        noBookingNote.innerText = (currentLang === "en" ? tr("unavailable") : (notice || tr("unavailable")));
       }
     }
 
     function applyEditModeUI() {
-      document.getElementById("pageTitle2").innerText = "修改預約";
+      document.getElementById("pageTitle2").innerText = currentLang === "en" ? "Edit Reservation" : "修改預約";
       document.getElementById("editBanner").style.display = "block";
-      document.getElementById("submitBtn").innerText = "確認修改";
+      document.getElementById("submitBtn").innerText = tr("update");
       document.getElementById("cancelBookingBtn").classList.remove("hidden");
     }
 
@@ -1404,7 +1482,7 @@
     document.getElementById("phone").addEventListener("input", sanitizePhoneInput);
 
     document.getElementById("visitDate").addEventListener("change", buildTimeOptions);
-    setBookingDateLimits();
+    applyLanguage();
 window.onload = initLIFF;
   </script>
 </body>
